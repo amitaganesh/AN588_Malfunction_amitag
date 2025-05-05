@@ -1,0 +1,12 @@
+1. What I learned from running their Original Homework Code that helped improve my own code:
+Reading and running your Z.prop.test() function helped me think more carefully about how to structure conditional logic for one- versus two-sample tests. I hadn’t initially accounted for both p2 and n2 potentially being NULL separately—this code’s use of an if (is.null(p2) || is.null(n2)) clause is something I directly incorporated to improve the robustness of my own function. Additionally, seeing how you structured the control flow and calculated both z-scores and confidence intervals gave me a clearer sense of how to organize and return outputs neatly using list().
+
+2. What I did in my own code that might help to improve theirs:
+I gave more thorough explanations and examples when explaining reasonings behind my work, and I think it would help if you could add those to your code as well.
+
+3. What challenges, if any, we both faced in our code that could not be helped by comparison:
+One shared challenge was loading and working with the Kamilar and Cooper dataset. Like you, I initially struggled with variable naming mismatches and ran into errors due to missing or misnamed columns (e.g., using log_brain instead of the expected Brain_Size_Species_Mean inside the predict() call). This type of issue stems more from the quirks of R's lm() and predict() syntax than anything that could be solved by peer comparison, though their workaround gave me a second example to follow.
+
+4. Whether the annotation/commenting on your peer’s Original Homework Code is readable and interpretable to you, and if not then how it could be improved:
+Most of your code was readable and logically laid out, though some sections—especially the regression visualizations and the prediction steps—would benefit from more inline comments. For example, a brief comment before the final prediction for the 800g brain size species explaining why the log scale is used and what the results mean in biological terms would make the code more self-explanatory. I think you're also missing the answer to the very last section of question 2?
+
