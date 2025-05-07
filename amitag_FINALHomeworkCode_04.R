@@ -1,0 +1,197 @@
+---
+  # title: "amitag_FINALHomeworkCode_04"
+  output: html_document
+date: "2025-05-02"
+---
+  
+  # Challenge 1: Write a simple R function, Z.prop.test(), that can perform one- or two-sample Z-tests for proportion data, using the following guidelines:
+  > # Your function should take the following arguments: p1 and n1 (no default) representing the estimated proportion and sample size (i.e., based on your sample data); p2 and n2 (both defaulting to NULL) that contain a second sample’s proportion and sample size data in the event of a two-sample test; p0 (no default) as the expected value for the population proportion; and alternative (default “two.sided”) and conf.level (default 0.95), to be used in the same way as in the function t.test().
+  > #. When conducting a two-sample test, it should be p1 that is tested as being smaller or larger than p2 when alternative=“less” or alternative=“greater”, the same as in the use of x and y in the function t.test().
+  > The function should perform a one-sample Z-test using p1, n1, and p0 if either p2 or n2 (or both) is NULL.
+Error: unexpected 'function' in "The function"
+> Z.prop.test <- function(p1, n1, p2 = NULL, n2 = NULL, p0, 
+                          +                         alternative = "two.sided", conf.level = 0.95) {
+  +     
+    +     z_star <- qnorm(1 - (1 - conf.level)/2)
+    +     
+      +     # One-sample Z-test
+      +     if (is.null(p2) || is.null(n2)) {
+        +         if (n1 * p1 < 5 || n1 * (1 - p1) < 5) {
+          +             warning("One-sample: Normal approximation may not be valid (n*p or n*(1-p) < 5)")
+          +         }
+        +         
+          +         se <- sqrt(p0 * (1 - p0) / n1)
+          +         z <- (p1 - p0) / se
+          +         
+            +         if (alternative == "two.sided") {
+              +             p.value <- 2 * pnorm(-abs(z))
+              +         } else if (alternative == "less") {
+                +             p.value <- pnorm(z)
+                +         } else if (alternative == "greater") {
+                  +             p.value <- 1 - pnorm(z)
+                  +         }
+          +         
+            +         ci <- c(p1 - z_star * se, p1 + z_star * se)
+            +     } 
+    +     
+      +     # Two-sample Z-test
+      +     else {
+        +         if (n1 * p1 < 5 || n1 * (1 - p1) < 5 || n2 * p2 < 5 || n2 * (1 - p2) < 5) {
+          +             warning("Two-sample: Normal approximation may not be valid (n*p or n*(1-p) < 5)")
+          +         }
+        +         
+          +         pooled_p <- (p1 * n1 + p2 * n2) / (n1 + n2)
+          +         se <- sqrt(pooled_p * (1 - pooled_p) * (1/n1 + 1/n2))
+          +         z <- ((p1 - p2) - p0) / se  # Note: p0 = 0 for standard test of difference
+          +         
+            +         if (alternative == "two.sided") {
+              +             p.value <- 2 * pnorm(-abs(z))
+              +         } else if (alternative == "less") {
+                +             p.value <- pnorm(z)  # tests if p1 < p2
+                +         } else if (alternative == "greater") {
+                  +             p.value <- 1 - pnorm(z)  # tests if p1 > p2
+                  +         }
+          +         
+            +         diff <- p1 - p2
+            +         ci <- c(diff - z_star * se, diff + z_star * se)
+            +     }
+    +     
+      +     return(list(Z = z, P = p.value, CI = ci))
+    + }
+> # Challenge 2: The dataset from Kamilar and Cooper has in it a large number of variables related to life history and body size. For this exercise, the end aim is to fit a simple linear regression model to predict longevity (MaxLongevity_m) measured in months from species’ brain size (Brain_Size_Species_Mean) measured in grams. Do the following for both longevity~brain size and log(longevity)~log(brain size)
+> # 3RD TRY - this challenge took a while as I couldn't keep track of the rigt column names and kept getting multiple errors - a little frustrating! 
+  > colnames(kamilar)
+[1] "Scientific_Name"         "Family"                 
+[3] "Genus"                   "Species"                
+[5] "Brain_Size_Species_Mean" "Brain_Size_Female_Mean" 
+[7] "Brain_size_Ref"          "Body_mass_male_mean"    
+[9] "Body_mass_female_mean"   "Mass_Dimorphism"        
+[11] "Mass_Ref"                "MeanGroupSize"          
+[13] "AdultMales"              "AdultFemale"            
+[15] "AdultSexRatio"           "Social_Organization_Ref"
+[17] "InterbirthInterval_d"    "Gestation"              
+[19] "WeaningAge_d"            "MaxLongevity_m"         
+[21] "LitterSz"                "Life_History_Ref"       
+[23] "GR_MidRangeLat_dd"       "Precip_Mean_mm"         
+[25] "Temp_Mean_degC"          "AET_Mean_mm"            
+[27] "PET_Mean_mm"             "Climate_Ref"            
+[29] "HomeRange_km2"           "HomeRangeRef"           
+[31] "DayLength_km"            "DayLengthRef"           
+[33] "Territoriality"          "Fruit"                  
+[35] "Leaves"                  "Fauna"                  
+[37] "DietRef1"                "Canine_Dimorphism"      
+[39] "Canine_Dimorphism_Ref"   "Feed"                   
+[41] "Move"                    "Rest"                   
+[43] "Social"                  "Activity_Budget_Ref"    
+> kamilar <- kamilar[!is.na(kamilar$MaxLongevity_m) & !is.na(kamilar$Brain_Size_Species_Mean), ]
+> 
+  > lm_model <- lm(MaxLongevity_m ~ Brain_Size_Species_Mean, data = kamilar)
+> log_model <- lm(log(MaxLongevity_m) ~ log(Brain_Size_Species_Mean), data = kamilar)
+> ggplot(kamilar, aes(x = Brain_Size_Species_Mean, y = MaxLongevity_m)) +
+  +     geom_point() +
+  +     geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  +     geom_text(x = 1000, y = 600, 
+                  +               label = paste0("y = ", round(coef(lm_model)[1], 2), 
+                                                 +                              " + ", round(coef(lm_model)[2], 2), "x"),
+                  +               hjust = 0) +
+  +     labs(title = "Linear Regression: Longevity vs Brain Size",
+             +          x = "Brain Size (g)", y = "Max Longevity (months)")
+`geom_smooth()` using formula = 'y ~ x'
+> ggplot(kamilar, aes(x = log(Brain_Size_Species_Mean), y = log(MaxLongevity_m))) +
+  +     geom_point() +
+  +     geom_smooth(method = "lm", se = FALSE, color = "red") +
+  +     geom_text(x = 4, y = 6, 
+                  +               label = paste0("y = ", round(coef(log_model)[1], 2), 
+                                                 +                              " + ", round(coef(log_model)[2], 2), "x"),
+                  +               hjust = 0) +
+  +     labs(title = "Log-Log Regression: log(Longevity) vs log(Brain Size)",
+             +          x = "log(Brain Size)", y = "log(Max Longevity)")
+`geom_smooth()` using formula = 'y ~ x'
+> summary(lm_model)
+
+Call:
+  lm(formula = MaxLongevity_m ~ Brain_Size_Species_Mean, data = kamilar)
+
+Residuals:
+  Min      1Q  Median      3Q     Max 
+-198.27  -61.92  -17.78   56.16  331.36 
+
+Coefficients:
+  Estimate Std. Error t value Pr(>|t|)    
+(Intercept)             248.9523    11.1111   22.41   <2e-16 ***
+  Brain_Size_Species_Mean   1.2180     0.1101   11.06   <2e-16 ***
+  ---
+  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 90.91 on 126 degrees of freedom
+Multiple R-squared:  0.4928,	Adjusted R-squared:  0.4887 
+F-statistic: 122.4 on 1 and 126 DF,  p-value: < 2.2e-16
+
+> summary(log_model) # see what it looks like at this point, so I know how to proceed correctly
+
+Call:
+  lm(formula = log(MaxLongevity_m) ~ log(Brain_Size_Species_Mean), 
+     data = kamilar)
+
+Residuals:
+  Min      1Q  Median      3Q     Max 
+-0.6955 -0.1750 -0.0097  0.1788  0.6084 
+
+Coefficients:
+  Estimate Std. Error t value Pr(>|t|)    
+(Intercept)                   4.87895    0.06907   70.63   <2e-16 ***
+  log(Brain_Size_Species_Mean)  0.23415    0.01781   13.15   <2e-16 ***
+  ---
+  Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 0.2485 on 126 degrees of freedom
+Multiple R-squared:  0.5784,	Adjusted R-squared:  0.5751 
+F-statistic: 172.9 on 1 and 126 DF,  p-value: < 2.2e-16
+
+> 
+  > confint(lm_model, level = 0.90)
+5 %      95 %
+  (Intercept)             230.540738 267.36379
+Brain_Size_Species_Mean   1.035571   1.40041
+> confint(log_model, level = 0.90)
+5 %      95 %
+  (Intercept)                  4.7644934 4.9934084
+log(Brain_Size_Species_Mean) 0.2046396 0.2636595
+> log_pred <- predict(log_model, interval = "confidence", level = 0.90)
+> log_pred_pi <- predict(log_model, interval = "prediction", level = 0.90)
+Warning message:
+  In predict.lm(log_model, interval = "prediction", level = 0.9) :
+  predictions on current data refer to _future_ responses
+
+> 
+  > kamilar$fit_log <- log_pred[, "fit"]
+> kamilar$lwr_log <- log_pred[, "lwr"]
+> kamilar$upr_log <- log_pred[, "upr"]
+> kamilar$lwr_pi <- log_pred_pi[, "lwr"]
+> kamilar$upr_pi <- log_pred_pi[, "upr"]
+> 
+  > ggplot(kamilar, aes(x = log(Brain_Size_Species_Mean), y = log(MaxLongevity_m))) +
+  +     geom_point() +
+  +     geom_line(aes(y = fit_log), color = "blue") +
+  +     geom_ribbon(aes(ymin = lwr_log, ymax = upr_log), fill = "blue", alpha = 0.2) +
+  +     geom_ribbon(aes(ymin = lwr_pi, ymax = upr_pi), fill = "green", alpha = 0.2) +
+  +     labs(title = "Log-Log Model with 90% CI and PI Bands",
+             +          x = "log(Brain Size)", y = "log(Max Longevity)")
+> new_species <- data.frame(Brain_Size_Species_Mean = 800)
+> log_pred_800 <- predict(log_model, newdata = new_species, interval = "prediction", level = 0.90)
+> exp(log_pred_800)
+fit      lwr      upr
+1 629.0118 412.1652 959.9446
+> cat("Prediction (log scale):\n")
+Prediction (log scale):
+  > print(log_pred_800)
+fit      lwr      upr
+1 6.44415 6.021424 6.866876
+> cat("\nPrediction (months):\n")
+
+Prediction (months):
+  > print(exp(log_pred_800))
+fit      lwr      upr
+1 629.0118 412.1652 959.9446
+> # I don’t really trust the prediction if 800g isn’t in the data range. The log-log one just looks like a better fit.
+  # Challenges I encountered: 1 - Figuring out how to load the dataset from GitHub. 2 - Getting the variable names right, there were a lot of errors I ran into which made it confusing. 3 - Remembering how to log-transform stuff. 4 - Plotting everything with ggplot2. Again, ran into more errors. Making sure the confidence and prediction intervals were correct, I had a bit of difficulty with the analysis portion. 
